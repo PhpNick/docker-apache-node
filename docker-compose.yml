@@ -1,0 +1,46 @@
+version: "3.7"
+ 
+services:
+    php:
+        build:
+            context: ./config/php
+        restart: "always"    
+        ports:
+            - 8005:80
+        volumes:
+            - ./web:/var/www/html
+            - ./config/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf            
+        networks:
+          - my-network
+
+    adminer:
+        image: "adminer:${ADMINER_VERSION}"
+        restart: "always"
+        depends_on:
+            - db    
+        ports:
+            - 8080:8080
+        environment:
+            ADMINER_DEFAULT_SERVER: "${MYSQL_HOST}"            
+        networks:
+            - my-network
+
+    db:
+        image: "mariadb:${MARIADB_VERSION}"
+        container_name: "${MYSQL_HOST}"
+        restart: "always"
+        ports:
+            - 3300:3306
+        volumes:
+            - ./data/mysql/db:/var/lib/mysql
+            - ./data/mysql/init.sql:/data/mysql/init.sql
+        command: "mysqld --init-file /data/mysql/init.sql"    
+        environment:
+            MYSQL_ROOT_PASSWORD: "${MYSQL_PASSWORD}"
+            MYSQL_DATABASE: "${MYSQL_DATABASE}"
+        networks:
+            - my-network
+
+networks:
+  my-network:
+    driver: bridge        
